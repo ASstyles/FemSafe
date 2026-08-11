@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FemSafe - Emergency Escalation & Personal Safety</title>
+
+  <!-- External CDNs -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div id="app">
+    <!-- Header Navbar -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <div class="brand-text">FemSafe</div>
+          <div class="brand-tag"><i class="fa-solid fa-bolt" style="color: var(--cyber-cyan);"></i> Rapid Response System</div>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <nav class="desktop-nav">
+        <button class="nav-tab active" data-target="sos-view">
+          <i class="fa-solid fa-triangle-exclamation"></i> Emergency Escalation
+        </button>
+        <button class="nav-tab" data-target="map-view">
+          <i class="fa-solid fa-map-location-dot"></i> Trip Escort & Map
+        </button>
+        <button class="nav-tab" data-target="tools-view">
+          <i class="fa-solid fa-phone-volume"></i> Discreet Exit
+        </button>
+        <button class="nav-tab" data-target="evidence-view">
+          <i class="fa-solid fa-video"></i> Evidence Logs
+        </button>
+        <button class="nav-tab" data-target="ai-view">
+          <i class="fa-solid fa-robot"></i> Safety AI
+        </button>
+        <button class="nav-tab" data-target="contacts-view">
+          <i class="fa-solid fa-users"></i> Emergency Network
+        </button>
+      </nav>
+
+      <!-- System Status & Quick Actions -->
+      <div class="header-actions">
+        <div class="status-pill" id="globalStatusPill">
+          <span class="status-dot"></span>
+          <span id="statusText">System Ready</span>
+        </div>
+
+        <button class="quick-btn" id="calcDisguiseBtn" title="Stealth Calculator Disguise">
+          <i class="fa-solid fa-calculator"></i>
+        </button>
+
+        <button class="quick-btn" id="sirenQuickBtn" title="Toggle Emergency Siren">
+          <i class="fa-solid fa-bullhorn"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="main-content">
+
+      <!-- Grounded Philosophy & Reliability Banner -->
+      <div class="parent-love-banner">
+        <div class="parent-banner-text">
+          <div class="parent-avatar-badge">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+          <div>
+            <h4 style="font-size: 15px; font-weight: 700; color: #fff;">Shortening the Time Between Danger and Getting Help</h4>
+            <p style="font-size: 12px; color: var(--text-muted);">FemSafe is an additional layer of protection designed to provide options across all stages of threat. Offline SMS & local evidence logging active.</p>
+          </div>
+        </div>
+        <button class="btn-secondary" id="shareParentGpsBtn" style="padding: 8px 16px; font-size: 12px; white-space: nowrap;">
+          <i class="fa-solid fa-share-nodes"></i> Broadcast GPS via SMS
+        </button>
+      </div>
+
+      <!-- ===================================================================
+           VIEW 1: Emergency SOS & Response Engine
+           =================================================================== -->
+      <section id="sos-view" class="view-panel active-panel">
+        <div class="glass-card sos-hero-card">
+          <h2>Emergency Distress Escalation</h2>
+          <p class="card-subtitle">Hold the button for 3 seconds to sound local siren, broadcast location to emergency network, and record evidence.</p>
+
+          <div class="sos-trigger-wrapper">
+            <svg class="sos-progress-ring" viewBox="0 0 220 220">
+              <circle class="ring-bg" cx="110" cy="110" r="100"></circle>
+              <circle class="ring-fill" id="sosProgressCircle" cx="110" cy="110" r="100"></circle>
+            </svg>
+
+            <button class="sos-btn" id="sosMainBtn">
+              <i class="fa-solid fa-hand"></i>
+              <span>HOLD SOS</span>
+              <small id="sosCountdownLabel">3 Seconds</small>
+            </button>
+          </div>
+
+          <!-- Stage Actions -->
+          <div class="sos-action-tiles">
+            <div class="action-tile tile-danger" id="sirenTile">
+              <i class="fa-solid fa-volume-high"></i>
+              <h4>Loud Alarm</h4>
+              <p>Dual Siren Deterrent</p>
+            </div>
+            <div class="action-tile tile-amber" id="strobeTile">
+              <i class="fa-solid fa-bolt"></i>
+              <h4>Visual Strobe</h4>
+              <p>Night Flash Beacon</p>
+            </div>
+            <div class="action-tile tile-emerald" id="silentSosTile">
+              <i class="fa-solid fa-user-secret"></i>
+              <h4>Stealth Alert</h4>
+              <p>Silent Location Alert</p>
+            </div>
+            <div class="action-tile" id="quickSmsTile">
+              <i class="fa-solid fa-paper-plane"></i>
+              <h4>Offline SMS</h4>
+              <p>Cellular GPS Link</p>
+            </div>
+          </div>
+
+          <!-- Secondary Trigger: Optional Noise Threshold Sensor -->
+          <div class="decibel-meter-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h4 style="font-size: 13px; color: #fff;"><i class="fa-solid fa-microphone-lines" style="color: var(--cyber-cyan);"></i> Optional High-Noise Sensor (Secondary Trigger)</h4>
+                <p style="font-size: 11px; color: #94a3b8;">Monitors sustained high volume (screams). Best used in quiet/isolated settings to avoid traffic false-positives.</p>
+              </div>
+              <button class="btn-secondary" id="toggleScreamSensorBtn" style="padding: 6px 14px; font-size: 11px;">
+                Enable Sensor
+              </button>
+            </div>
+            <div class="decibel-bar-container">
+              <div class="decibel-bar-fill" id="decibelMeterFill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Multi-Stage Danger Model Card -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-layer-group"></i> 5-Stage Danger Response Model
+              </div>
+            </div>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 12px; color: #94a3b8;">
+              <li><strong style="color: var(--cyber-cyan);">1. Before Danger:</strong> Journey Escort ("Walk With Me") monitors cab/walk travel time.</li>
+              <li><strong style="color: var(--amber-warning);">2. Uncomfortable Situation:</strong> Discreet Fake Call provides a realistic exit excuse.</li>
+              <li><strong style="color: var(--emergency-red);">3. Active Crisis:</strong> SOS hold triggers siren, SMS dispatch, and evidence logging.</li>
+              <li><strong style="color: #ff0055;">4. Device Compromised:</strong> Duress PIN & Calculator disguise provide stealth options under pressure.</li>
+              <li><strong style="color: var(--emerald-safe);">5. Post-Incident:</strong> Local evidence vault preserves timestamped audio/video logs.</li>
+            </ul>
+          </div>
+
+          <!-- Security Deactivation & Limitations -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-shield-halved"></i> Deactivation & System Boundaries
+              </div>
+            </div>
+            <p class="card-subtitle" style="margin-bottom: 12px;">Deactivate active alerts using your PIN (1234) or discreet Duress PIN (9999).</p>
+            <button class="btn-secondary" id="openPinModalBtn" style="width: 100%; justify-content: center; margin-bottom: 14px;">
+              <i class="fa-solid fa-lock"></i> Security PIN / Deactivate
+            </button>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: 8px; padding: 10px; font-size: 11px; color: #64748b;">
+              <i class="fa-solid fa-circle-info" style="color: var(--amber-warning);"></i> <strong>Reliability Note:</strong> SOS alerts rely on cellular network SMS when offline. Web media capture depends on browser/OS permissions.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 2: Trip Escort & Map
+           =================================================================== -->
+      <section id="map-view" class="view-panel">
+        <div class="glass-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title"><i class="fa-solid fa-map-location-dot"></i> Journey Monitoring & SafeSpots</div>
+              <div class="card-subtitle">Real-time GPS positioning with nearby emergency resources and journey check-in timers.</div>
+            </div>
+            <button class="btn-primary" id="refreshGpsBtn">
+              <i class="fa-solid fa-location-crosshairs"></i> Refresh Position
+            </button>
+          </div>
+
+          <div class="safespot-filters">
+            <div class="filter-chip active" data-filter="all">All SafeSpots</div>
+            <div class="filter-chip" data-filter="police">🚓 Police Stations</div>
+            <div class="filter-chip" data-filter="hospital">🏥 Hospitals</div>
+            <div class="filter-chip" data-filter="pharmacy">💊 24/7 Pharmacies</div>
+            <div class="filter-chip" data-filter="business">☕ Safe Business / Malls</div>
+          </div>
+
+          <div class="map-wrapper">
+            <div id="map"></div>
+          </div>
+
+          <!-- Trip Escort Monitor -->
+          <div class="taxi-monitor-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h4 style="font-size: 15px; color: #fff;"><i class="fa-solid fa-taxi" style="color: var(--amber-warning);"></i> Trip Monitoring ("Walk With Me")</h4>
+                <p style="font-size: 12px; color: #94a3b8;">Set travel duration. If unconfirmed when timer hits zero, auto-SOS alerts contacts with vehicle details.</p>
+              </div>
+              <div style="font-family: var(--font-heading); font-size: 32px; font-weight: 800; color: var(--amber-warning);" id="journeyTimerDisplay">00:00</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 14px;">
+              <input type="text" id="cabPlateInput" class="form-input" placeholder="Cab License Plate (e.g. NY-8892)" style="margin-bottom: 0;" />
+              <input type="text" id="cabDriverInput" class="form-input" placeholder="Driver Name / Rideshare App" style="margin-bottom: 0;" />
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+              <button class="btn-secondary" id="startTimer5mBtn" style="padding: 8px 16px; font-size: 12px;">+5 Min Walk</button>
+              <button class="btn-secondary" id="startTimer15mBtn" style="padding: 8px 16px; font-size: 12px;">+15 Min Taxi</button>
+              <button class="btn-danger" id="cancelJourneyTimerBtn" style="padding: 8px 16px; font-size: 12px; display: none;">Cancel Escort</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 3: Discreet Exit (Fake Call)
+           =================================================================== -->
+      <section id="tools-view" class="view-panel">
+        <div class="glass-card" style="text-align: center;">
+          <h2><i class="fa-solid fa-phone-volume" style="color: var(--cyber-cyan);"></i> Discreet Exit Call Simulator</h2>
+          <p class="card-subtitle">Generate a realistic incoming call to create a plausible, non-confrontational reason to leave uncomfortable settings.</p>
+
+          <h4 style="margin-top: 24px; text-align: left; font-size: 15px;">Select Caller Profile:</h4>
+          <div class="caller-select-grid">
+            <div class="caller-card selected" data-caller="Dad ❤️" data-avatar="D">
+              <div class="caller-avatar-sm" style="background: linear-gradient(135deg, #00f2fe, #0077ff);">D</div>
+              <h4>Dad ❤️</h4>
+              <p>Cellular Call</p>
+            </div>
+            <div class="caller-card" data-caller="Mom ❤️" data-avatar="M">
+              <div class="caller-avatar-sm" style="background: linear-gradient(135deg, #ff0055, #ff4081);">M</div>
+              <h4>Mom ❤️</h4>
+              <p>Cellular Call</p>
+            </div>
+            <div class="caller-card" data-caller="Officer Davis" data-avatar="P">
+              <div class="caller-avatar-sm" style="background: linear-gradient(135deg, #303e57, #1d2d44);">P</div>
+              <h4>Officer Davis</h4>
+              <p>Police Patrol</p>
+            </div>
+            <div class="caller-card" data-caller="Dispatch" data-avatar="C">
+              <div class="caller-avatar-sm" style="background: linear-gradient(135deg, #ffb703, #ff8800);">C</div>
+              <h4>Rideshare Driver</h4>
+              <p>Driver Alert</p>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 12px; margin: 20px 0; flex-wrap: wrap;">
+            <button class="btn-primary" id="launchFakeCallNowBtn">
+              <i class="fa-solid fa-phone-flip"></i> Trigger Call Instant
+            </button>
+            <button class="btn-secondary" id="launchFakeCall10sBtn">
+              <i class="fa-solid fa-hourglass-start"></i> In 10 Seconds
+            </button>
+            <button class="btn-secondary" id="launchFakeCall30sBtn">
+              <i class="fa-solid fa-hourglass-half"></i> In 30 Seconds
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 4: Evidence Logs
+           =================================================================== -->
+      <section id="evidence-view" class="view-panel">
+        <div class="grid-2">
+          <!-- Video Recording -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-video"></i> Video Evidence Capture</div>
+              <button class="btn-secondary" id="toggleNightVisionBtn" style="padding: 4px 12px; font-size: 11px;">
+                Low-Light Filter
+              </button>
+            </div>
+
+            <div class="camera-feed-box" id="cameraBox">
+              <video id="videoFeed" autoplay playsinline muted></video>
+              <div class="camera-overlay-badge" style="position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 20px; font-size: 11px;">
+                <span class="rec-dot" id="recDot" style="display: inline-block; width: 8px; height: 8px; background: red; border-radius: 50%;"></span>
+                <span id="videoRecStatus">Camera Ready</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+              <button class="btn-primary" id="startVideoRecBtn">
+                <i class="fa-solid fa-circle"></i> Record Video
+              </button>
+              <button class="btn-secondary" id="stopVideoRecBtn" disabled>
+                <i class="fa-solid fa-square"></i> Stop
+              </button>
+            </div>
+          </div>
+
+          <!-- Audio Capture & Local Evidence Vault -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-microphone"></i> Audio Recorder & Spectrum</div>
+            </div>
+
+            <div class="audio-canvas-box">
+              <canvas id="audioCanvas"></canvas>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+              <button class="btn-primary" id="startAudioRecBtn">
+                <i class="fa-solid fa-microphone-lines"></i> Record Audio
+              </button>
+              <button class="btn-secondary" id="stopAudioRecBtn" disabled>
+                <i class="fa-solid fa-square"></i> Stop
+              </button>
+            </div>
+
+            <h4 style="font-size: 14px; margin-top: 16px; margin-bottom: 10px;">Local Encrypted Storage Log:</h4>
+            <div id="recordingsList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
+              <p style="font-size: 12px; color: #94a3b8;">No evidence recordings captured yet.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 5: Safety AI Copilot
+           =================================================================== -->
+      <section id="ai-view" class="view-panel">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-robot" style="color: var(--primary-pink);"></i> Safety AI Copilot</div>
+            <button class="btn-secondary" id="voiceAssistantBtn" style="padding: 6px 14px; font-size: 12px;">
+              <i class="fa-solid fa-microphone"></i> Voice Input
+            </button>
+          </div>
+
+          <div class="chat-container" id="chatContainer">
+            <div class="chat-bubble chat-bot">
+              Hello. I am the FemSafe Safety Assistant. I can provide situation guidance, help compile SMS dispatch reports, or direct you to nearby emergency resources.
+            </div>
+          </div>
+
+          <div class="quick-prompts-row">
+            <div class="prompt-chip" data-prompt="I feel like someone is following me.">🚶‍♂️ Someone following me</div>
+            <div class="prompt-chip" data-prompt="Generate Emergency SMS report with my GPS position.">📡 Generate GPS SMS</div>
+            <div class="prompt-chip" data-prompt="What should I do if I am alone in a dark street?">🌙 Dark street safety tips</div>
+            <div class="prompt-chip" data-prompt="Find nearest police station emergency contact.">🚓 Police station contacts</div>
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" id="chatInputField" class="chat-input-field" placeholder="Ask for safety guidance or SMS report..." />
+            <button class="btn-primary" id="sendChatBtn">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 6: Emergency Network
+           =================================================================== -->
+      <section id="contacts-view" class="view-panel">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-users"></i> Emergency Contacts List</div>
+          </div>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+            <input type="text" id="contactNameInput" class="form-input" placeholder="Contact Name (e.g. Dad)" style="flex: 1; min-width: 150px; margin-bottom: 0;" />
+            <input type="tel" id="contactPhoneInput" class="form-input" placeholder="Phone Number (+1...)" style="flex: 1; min-width: 150px; margin-bottom: 0;" />
+            <button class="btn-primary" id="addContactBtn" style="height: 44px;">
+              <i class="fa-solid fa-user-plus"></i> Add Contact
+            </button>
+          </div>
+
+          <div class="contacts-list" id="contactsListContainer"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Mobile Nav Dock -->
+    <div class="mobile-nav-dock">
+      <div class="mobile-dock-btn active" data-target="sos-view">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>SOS Hub</span>
+      </div>
+      <div class="mobile-dock-btn" data-target="map-view">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>Escort</span>
+      </div>
+      <div class="mobile-dock-btn" data-target="tools-view">
+        <i class="fa-solid fa-phone-volume"></i>
+        <span>Fake Call</span>
+      </div>
+      <div class="mobile-dock-btn" data-target="evidence-view">
+        <i class="fa-solid fa-video"></i>
+        <span>Evidence</span>
+      </div>
+      <div class="mobile-dock-btn" data-target="ai-view">
+        <i class="fa-solid fa-robot"></i>
+        <span>Safety AI</span>
+      </div>
+      <div class="mobile-dock-btn" data-target="contacts-view">
+        <i class="fa-solid fa-users"></i>
+        <span>Network</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: Fake Call Simulator -->
+  <div class="fake-call-modal" id="fakeCallModal">
+    <div class="call-header-info">
+      <div class="caller-avatar-lg" id="modalCallerAvatar">D</div>
+      <h2 class="caller-name-display" id="modalCallerName">Dad ❤️</h2>
+      <p class="call-status-subtitle" id="modalCallStatus">Incoming Call...</p>
+    </div>
+
+    <div class="active-call-body" id="modalActiveCallBody" style="display: none; text-align: center;">
+      <div style="font-family: var(--font-heading); font-size: 32px; font-weight: 700;" id="callTimerDisplay">00:00</div>
+      <p style="font-size: 13px; color: var(--cyber-cyan); margin-top: 10px;">Audio Line Active • Speaker On</p>
+    </div>
+
+    <div class="call-actions-row" id="modalCallActions" style="display: flex; justify-content: space-around;">
+      <button class="call-btn call-btn-decline" id="declineFakeCallBtn" title="Decline Call">
+        <i class="fa-solid fa-phone-slash"></i>
+      </button>
+      <button class="call-btn call-btn-accept" id="answerFakeCallBtn" title="Answer Call">
+        <i class="fa-solid fa-phone"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Duress Security PIN Overlay -->
+  <div class="modal-overlay" id="pinModal">
+    <div class="modal-box">
+      <h3 style="font-size: 20px; margin-bottom: 6px;"><i class="fa-solid fa-shield-halved" style="color: var(--primary-pink);"></i> Security PIN Pad</h3>
+      <p style="font-size: 12px; color: #94a3b8;">Enter 4-digit PIN to deactivate alarm, or secret Duress PIN (9999) as a discreet emergency option.</p>
+
+      <div class="pin-display-dots">
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+        <div class="pin-dot" id="dot4"></div>
+      </div>
+
+      <div class="pin-pad-grid">
+        <button class="pin-key" data-key="1">1</button>
+        <button class="pin-key" data-key="2">2</button>
+        <button class="pin-key" data-key="3">3</button>
+        <button class="pin-key" data-key="4">4</button>
+        <button class="pin-key" data-key="5">5</button>
+        <button class="pin-key" data-key="6">6</button>
+        <button class="pin-key" data-key="7">7</button>
+        <button class="pin-key" data-key="8">8</button>
+        <button class="pin-key" data-key="9">9</button>
+        <button class="pin-key" data-key="C" style="font-size: 14px; color: var(--emergency-red);">Clear</button>
+        <button class="pin-key" data-key="0">0</button>
+        <button class="pin-key" data-key="OK" style="font-size: 14px; color: var(--emerald-safe);">OK</button>
+      </div>
+
+      <button class="btn-secondary" id="closePinModalBtn" style="margin-top: 20px; font-size: 12px;">Close</button>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Calculator Disguise -->
+  <div class="calc-modal-overlay" id="calcModal">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <span style="font-size: 12px; color: #64748b;"><i class="fa-solid fa-calculator"></i> Calculator Pro</span>
+      <button id="exitCalcBtn" style="background: none; border: none; color: #ff0055; font-size: 12px; cursor: pointer;">Exit Calculator</button>
+    </div>
+    <div class="calc-display" id="calcDisplay">0</div>
+
+    <div class="calc-pad">
+      <button class="calc-btn top calc-action" data-val="C">AC</button>
+      <button class="calc-btn top calc-action" data-val="+/-">+/-</button>
+      <button class="calc-btn top calc-action" data-val="%">%</button>
+      <button class="calc-btn op calc-action" data-val="/">÷</button>
+
+      <button class="calc-btn calc-num" data-val="7">7</button>
+      <button class="calc-btn calc-num" data-val="8">8</button>
+      <button class="calc-btn calc-num" data-val="9">9</button>
+      <button class="calc-btn op calc-action" data-val="*">×</button>
+
+      <button class="calc-btn calc-num" data-val="4">4</button>
+      <button class="calc-btn calc-num" data-val="5">5</button>
+      <button class="calc-btn calc-num" data-val="6">6</button>
+      <button class="calc-btn op calc-action" data-val="-">-</button>
+
+      <button class="calc-btn calc-num" data-val="1">1</button>
+      <button class="calc-btn calc-num" data-val="2">2</button>
+      <button class="calc-btn calc-num" data-val="3">3</button>
+      <button class="calc-btn op calc-action" data-val="+">+</button>
+
+      <button class="calc-btn calc-num" data-val="0" style="grid-column: span 2; border-radius: 35px;">0</button>
+      <button class="calc-btn calc-num" data-val=".">.</button>
+      <button class="calc-btn op calc-action" data-val="=">=</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
